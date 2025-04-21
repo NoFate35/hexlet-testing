@@ -1,3 +1,6 @@
+from github import Github
+from hexlet_testing.monkeypatching import get_private_fork_names
+
 def test_get_private_fork_names(monkeypatch):
     # определим функцию-подмену сразу в тесте
     def fake_get_repos(self):
