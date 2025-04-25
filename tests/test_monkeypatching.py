@@ -1,19 +1,40 @@
-from github import Github
-from hexlet_testing.monkeypatching import get_private_fork_names
+from hexlet_testing.implementations import get_class
+from hexlet_testing.implementations import User, NotificationError
+import pytest
 
-def test_get_private_fork_names(monkeypatch):
-    # определим функцию-подмену сразу в тесте
-    def fake_get_repos(self):
-        return [
-            type("Repo", (), {"name": "repo1", "fork": True})(),
-            type("Repo", (), {"name": "repo2", "fork": False})(),
-            type("Repo", (), {"name": "repo3", "fork": True})(),
-        ]
+# сервис уведомлений, который нужно протестировать
+NotificationService = get_class()
 
-    # Подменяем методы с помощью monkeypatch
-    monkeypatch.setattr(Github, "get_user", lambda self, username: self)
-    monkeypatch.setattr(Github, "get_repos", fake_get_repos)
 
-    # Проверяем результат
-    result = get_private_fork_names("hexlet")
-    assert result == ["repo1", "repo3"]
+
+
+# BEGIN (write your solution here)
+@pytest.fixture
+def email_service():
+    def send(self, email, message):
+        if message == '':
+            return False
+        return True
+
+
+@pytest.fixture
+def sms_service():
+    def send(self, phone, message):
+        if message == '':
+            return False
+        return True
+
+@pytest.fixture
+def push_service():
+    def send(self, device_id, message):
+        if message == '':
+            return False
+        return True
+
+
+
+def test_notification_service(user, email_service, sms_service, push_service):
+    noty = NotificationService(email_service, sms_service, push_service)
+    result = noty.send_notification(user, "yyyyyy", ['email', 'sms', 'push'])
+    assert result == True
+# END
