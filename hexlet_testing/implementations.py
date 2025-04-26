@@ -1,102 +1,82 @@
 import os
+from datetime import datetime, timedelta
 
 
-class NotificationError(Exception):
-    pass
+def is_file_old(file_path, days):
+    """
+    Проверяет, является ли файл старше заданного количества дней.
+
+    :param file_path: путь к файлу
+    :param days: количество дней
+    :return: True, если файл старше, иначе False
+    """
+    if not os.path.exists(file_path):
+        return False
+
+    file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+    current_time = datetime.now()
+    return (current_time - file_time) > timedelta(days=days)
 
 
-class User:
-    def __init__(self, email=None, phone=None, device_id=None):
-        self.email = email
-        self.phone = phone
-        self.device_id = device_id
+def delete_old_files(directory, days):
+    """
+    Удаляет файлы в указанной директории старше заданного количества дней.
+
+    :param directory: путь к директории
+    :param days: количество дней
+    :return: список удаленных файлов
+    """
+    if not os.path.exists(directory):
+        return None
+
+    deleted_files = []
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path) and is_file_old(file_path, days):
+            os.remove(file_path)
+            deleted_files.append(filename)
+    return deleted_files
 
 
-class NotificationService:
-    def __init__(self, email_service, sms_service, push_service):
-        self.email_service = email_service
-        self.sms_service = sms_service
-        self.push_service = push_service
+def delete_old_files_wrong1(directory, days):
+    """
+    Неправильная реализация: удаляет все файлы, независимо от их возраста
+    """
+    if not os.path.exists(directory):
+        return None
 
-    def send_notification(self, user, message, channels):
-        if not channels:
-            raise NotificationError("No channels specified")
-        results = []
-        if 'email' in channels and user.email:
-            results.append(self.email_service.send(user.email, message))
-        if 'sms' in channels and user.phone:
-            results.append(self.sms_service.send(user.phone, message))
-        if 'push' in channels and user.device_id:
-            results.append(self.push_service.send(user.device_id, message))
-        return all(results)
+    deleted_files = []
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            deleted_files.append(filename)
+    print('Deleted files:', deleted_files)
+    return deleted_files
 
 
-class IncorrectNotificationSystem1:
-    def __init__(self, email_service, sms_service, push_service):
-        self.email_service = email_service
-        self.sms_service = sms_service
-        self.push_service = push_service
+def delete_old_files_wrong2(directory, days):
+    """
+    Неправильная реализация: не удаляет файлы, а только составляет список
+    """
+    if not os.path.exists(directory):
+        return False
 
-    def send_notification(self, user, message, channels):
-        results = []
-        # Неправильная логика: игнорируем параметр channels и всегда пытаемся отправить по всем каналам
-        if user.email:
-            results.append(self.email_service.send(user.email, message))
-        if user.phone:
-            results.append(self.sms_service.send(user.phone, message))
-        if user.device_id:
-            results.append(self.push_service.send(user.device_id, message))
-        return all(results)
+    old_files = []
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path) and is_file_old(file_path, days):
+            old_files.append(filename)
+    return old_files
 
 
-class IncorrectNotificationSystem2:
-    def __init__(self, email_service, sms_service, push_service):
-        self.email_service = email_service
-        self.sms_service = sms_service
-        self.push_service = push_service
-
-    def send_notification(self, user, message, channels):
-        if not channels:
-            raise NotificationError("No channels specified")
-        results = []
-        if 'email' in channels and user.email:
-            results.append(self.email_service.send(user.email, message))
-        if 'sms' in channels and user.phone:
-            results.append(self.sms_service.send(user.phone, message))
-        if 'push' in channels and user.device_id:
-            results.append(self.push_service.send(user.device_id, message))
-        # Неправильная логика: возвращаем True, только если все каналы использовались
-        return len(results) == len(channels)
-
-
-class IncorrectNotificationSystem3:
-    def __init__(self, email_service, sms_service, push_service):
-        self.email_service = email_service
-        self.sms_service = sms_service
-        self.push_service = push_service
-
-    def send_notification(self, user, message, channels):
-        results = []
-        if not channels:
-            return False
-        if 'email' in channels and user.email:
-            results.append(self.email_service.send(user.email, message))
-        if 'sms' in channels and user.phone:
-            results.append(self.sms_service.send(user.phone, message))
-        if 'push' in channels and user.device_id:
-            results.append(self.push_service.send(user.device_id, message))
-        # Неправильная логика: возвращаем True, если хотя бы один канал вернул True
-        return any(results)
-
-
-classes = {
-    "right": NotificationService,
-    "fail1": IncorrectNotificationSystem1,
-    "fail2": IncorrectNotificationSystem2,
-    "fail3": IncorrectNotificationSystem3,
+functions = {
+    "right": delete_old_files,
+    "wrong1": delete_old_files_wrong1,
+    "wrong2": delete_old_files_wrong2,
 }
 
 
-def get_class():
-    name = os.environ['CLASS_VERSION']
-    return classes[name]
+def get_function():
+    name = os.environ['FUNCTION_VERSION']
+    return functions[name]

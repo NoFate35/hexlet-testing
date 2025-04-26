@@ -1,40 +1,30 @@
-from hexlet_testing.implementations import get_class
-from hexlet_testing.implementations import User, NotificationError
-import pytest
+import os
+from datetime import datetime, timedelta
 
-# сервис уведомлений, который нужно протестировать
-NotificationService = get_class()
+from freezegun import freeze_time
+from functions import get_function
+
+delete_old_files = get_function()
 
 
+def create_file(directory, filename, days_old):
+    """Вспомогательная функция для создания файла с заданной датой изменения."""
+    file_path = os.path.join(directory, filename)
+    with open(file_path, "w") as f:
+        f.write("test content")
+    old_time = datetime.now() - timedelta(days=days_old)
+    os.utime(file_path, (old_time.timestamp(), old_time.timestamp()))
 
 
 # BEGIN (write your solution here)
-@pytest.fixture
-def email_service():
-    def send(self, email, message):
-        if message == '':
-            return False
-        return True
+@freeze_time("2012-01-14")
+def test_norm_func(tmp_path):
+    d = tmp_path / "sub"
+    d.mkdir()
+    create_file(d, 'yyyy.txt', 5)
+    create_file(d, 'iiii.txt', 3)
+    create_file(d, 'jjjj.txt', 3)
+    delete_old_files(d, 4)
+    assert len(os.listdir(d)) == 2
 
-
-@pytest.fixture
-def sms_service():
-    def send(self, phone, message):
-        if message == '':
-            return False
-        return True
-
-@pytest.fixture
-def push_service():
-    def send(self, device_id, message):
-        if message == '':
-            return False
-        return True
-
-
-
-def test_notification_service(user, email_service, sms_service, push_service):
-    noty = NotificationService(email_service, sms_service, push_service)
-    result = noty.send_notification(user, "yyyyyy", ['email', 'sms', 'push'])
-    assert result == True
 # END
